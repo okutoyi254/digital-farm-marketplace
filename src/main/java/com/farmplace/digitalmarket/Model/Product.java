@@ -1,0 +1,51 @@
+package com.farmplace.digitalmarket.Model;
+
+import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.util.List;
+
+@AllArgsConstructor
+@NoArgsConstructor
+@Data
+@Entity
+@Table(name = "products")
+public class Product {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "product_id")
+    private Long productId;
+
+    @Column(name = "product_name")
+    private String productName;
+
+    @Column(name = "unit_price")
+    private Double unitPrice;
+
+    @Column(name = "shelf_life")
+    private String shelf_life;
+
+    @Column(name = "initial_quantity")
+    private int initialQuantity;
+
+    @Column(name = "current_stock")
+    private int currentStock;
+
+    @Column(name = "image_url")
+    private String imageUrl;
+
+    @ManyToOne
+    @JoinColumn(name = "category_id")
+    private ProductsCategory productsCategory;
+
+    @ManyToOne
+    @JoinColumn(name = "farmer_id")
+    private Farmer farmer;
+
+    @OneToMany(mappedBy = "product",cascade = CascadeType.ALL,orphanRemoval = true)
+    private List<OrderItem> orderItems;
+
+}
