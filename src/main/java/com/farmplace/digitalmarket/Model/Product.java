@@ -2,6 +2,7 @@ package com.farmplace.digitalmarket.Model;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -9,6 +10,7 @@ import java.util.List;
 
 @AllArgsConstructor
 @NoArgsConstructor
+@Builder
 @Data
 @Entity
 @Table(name = "products")
@@ -26,7 +28,7 @@ public class Product {
     private Double unitPrice;
 
     @Column(name = "shelf_life")
-    private String shelf_life;
+    private String shelfLife;
 
     @Column(name = "initial_quantity")
     private int initialQuantity;
