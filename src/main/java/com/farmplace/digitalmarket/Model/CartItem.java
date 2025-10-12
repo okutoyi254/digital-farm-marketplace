@@ -29,9 +29,18 @@ public class CartItem {
     @Column(name = "total_price")
     private double totalPrice;
 
+    @Column(name = "delivery_charges")
+    private double deliveryCharges;
+
     @ManyToOne
     @JoinColumn(name = "cart_id")
     private Cart cart;
+
+    @ManyToOne
+    @JoinColumn(name = "product_id")
+    private Product product;
+
+
 
 
 

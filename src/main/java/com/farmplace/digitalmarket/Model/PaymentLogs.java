@@ -33,6 +33,9 @@ public class PaymentLogs {
     @Column(name = "paid_at")
     private LocalDateTime paidAt;
 
+    @Column(name = "amount")
+    private double amount;
+
     @OneToOne
     @JoinColumn(name = "order_id")
     private Order order;
