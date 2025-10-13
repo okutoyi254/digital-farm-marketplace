@@ -1,19 +1,25 @@
 package com.farmplace.digitalmarket.service.services;
 
 import com.farmplace.digitalmarket.DTO.AddProductToCart;
+import com.farmplace.digitalmarket.DTO.CreateAccountDto;
+import com.farmplace.digitalmarket.DTO.CustomerRegister;
 import com.farmplace.digitalmarket.Model.Cart;
 import com.farmplace.digitalmarket.Model.CartItem;
+import com.farmplace.digitalmarket.Model.Customer;
 import com.farmplace.digitalmarket.Model.Product;
 import com.farmplace.digitalmarket.exceptions.FailedToFetchCustomerCart;
 import com.farmplace.digitalmarket.exceptions.ProductDoesntExistException;
 import com.farmplace.digitalmarket.repository.CartItemRepository;
 import com.farmplace.digitalmarket.repository.CartRepository;
+import com.farmplace.digitalmarket.repository.CustomerRepository;
 import com.farmplace.digitalmarket.repository.ProductRepository;
 import com.farmplace.digitalmarket.service.serviceInterface.CustomerService;
 import com.farmplace.digitalmarket.utils.LoggedInCustomer;
+import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 @Service
@@ -22,13 +28,17 @@ public class CustomerServiceImpl implements CustomerService {
     private final ProductRepository productRepository;
     private final CartRepository cartRepository;
     private final CartItemRepository cartItemRepository;
+    private final CustomerRepository customerRepository;
+    private final ModelMapper modelMapper;
     private Cart cart;
 
 
-    public CustomerServiceImpl(ProductRepository productRepository, CartRepository cartRepository, CartItemRepository cartItemRepository) {
+    public CustomerServiceImpl(ProductRepository productRepository, CartRepository cartRepository, CartItemRepository cartItemRepository, CustomerRepository customerRepository, ModelMapper modelMapper) {
         this.productRepository = productRepository;
         this.cartRepository = cartRepository;
         this.cartItemRepository = cartItemRepository;
+        this.customerRepository = customerRepository;
+        this.modelMapper = modelMapper;
     }
 
     //To be implemented later
@@ -60,6 +70,27 @@ public class CustomerServiceImpl implements CustomerService {
 
 
     return cartItem;
+    }
+
+    @Override
+    public CreateAccountDto createAccount(CustomerRegister customerRegister) {
+        Customer customer=modelMapper.map(customerRegister, Customer.class);
+        customer.setCreatedAt(LocalDateTime.now());
+
+        Cart cart1=new Cart();
+        cart1.setCustomer(customer);
+        cart1.setCreatedAt(LocalDateTime.now());
+        customerRepository.save(customer);
+        cartRepository.save(cart1);
+
+
+
+        CreateAccountDto createAccountDto= CreateAccountDto.builder()
+                .emailAddress(customerRegister.getEmailAddress())
+                .phoneNumber(customer.getPhoneNumber())
+                .firstName(customerRegister.getFirstName()).build();
+
+        return createAccountDto;
     }
 
     private CartItem getCartItem(AddProductToCart productToCart, Product product) {

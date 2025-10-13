@@ -21,7 +21,10 @@ public class BusinessServiceImpl implements businessService {
     private OrderRepository orderRepository;
     private OrderItemRepository orderItemRepository;
 
-    public BusinessServiceImpl(CustomerRepository customerRepository, OrderRepository orderRepository, OrderItemRepository orderItemRepository, PaymentLogsRepository paymentLogs, CartRepository cartRepository, CartItemRepository cartItemRepository) {
+    public BusinessServiceImpl(CustomerRepository customerRepository,
+                               OrderRepository orderRepository, OrderItemRepository orderItemRepository,
+                               PaymentLogsRepository paymentLogs, CartRepository cartRepository,
+                               CartItemRepository cartItemRepository) {
         this.customerRepository = customerRepository;
         this.orderRepository = orderRepository;
         this.orderItemRepository = orderItemRepository;
@@ -39,12 +42,14 @@ public class BusinessServiceImpl implements businessService {
     @Override
     public Order placeOrder(String username, double paymentAmount) {
 
-        if(paymentAmount < calculateTotalCost(username)){
+        Cart cart=cartRepository.findByCustomer_phoneNumber(username).
+                orElseThrow(()-> new FailedToFetchCustomerCart("Internal error,try again later"));
+
+        if(paymentAmount < calculateTotalCost(cart)){
             throw new InsufficientBalanceException("Insufficient balance to place the order,please try again later");
         }
 
-        Cart cart=cartRepository.findByCustomer_phoneNumber(username).
-                orElseThrow(()-> new FailedToFetchCustomerCart("Internal error,try again later"));
+
 
         if(cart.getCartItems()==null || cart.getCartItems().isEmpty()){
             throw new NoItemsInTheCartException("No items available,add products to place an order");
@@ -61,7 +66,7 @@ public class BusinessServiceImpl implements businessService {
 
         persistToOrderItems(cart,order);
 
-        persistToPaymentsLogs(order,username,paymentAmount);
+        persistToPaymentsLogs(order,cart,paymentAmount);
 
         cart.getCartItems().clear();
         cartRepository.save(cart);
@@ -70,8 +75,22 @@ public class BusinessServiceImpl implements businessService {
     }
 
     @Override
-    public Double calculateTotalCost(String username) {
-        return 0.0;
+    public Double calculateTotalCost(Cart cart) {
+
+        double totalCost=0.0;
+        for(CartItem cartItem :cart.getCartItems()){
+
+            double totalPrice=cartItem.getQuantity()* cartItem.getUnitPrice();
+            double deliveries=deliveryCharges();
+            double priceOff= cartItem.getDiscountAllowed();
+            totalCost+=totalPrice+deliveries-priceOff;
+
+        }
+        return totalCost;
+    }
+
+    private double deliveryCharges() {
+        return 0.0000;
     }
 
     private void persistToOrderItems(Cart cart, Order order){
@@ -93,8 +112,8 @@ public class BusinessServiceImpl implements businessService {
         orderItemRepository.saveAll(orderItems);
     }
 
-    private void persistToPaymentsLogs(Order order,String username,double paymentAmount){
-        double totalPrice = calculateTotalCost(username);
+    private void persistToPaymentsLogs(Order order,Cart cart,double paymentAmount){
+        double totalPrice = calculateTotalCost(cart);
         PaymentLogs payments = new PaymentLogs();
         payments.setOrder(order);
         payments.setPaidAt(LocalDateTime.now());
@@ -103,4 +122,6 @@ public class BusinessServiceImpl implements businessService {
         order.setPaymentLogs(payments);
         paymentLogs.save(payments);
     }
+
+    
 }
