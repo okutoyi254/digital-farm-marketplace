@@ -1,8 +1,6 @@
 package com.farmplace.digitalmarket.controllers;
 
-import com.farmplace.digitalmarket.DTO.ApiResponse;
-import com.farmplace.digitalmarket.DTO.CreateAccountDto;
-import com.farmplace.digitalmarket.DTO.CustomerRegister;
+import com.farmplace.digitalmarket.DTO.*;
 import com.farmplace.digitalmarket.service.serviceInterface.CustomerService;
 import org.springframework.http.HttpCookie;
 import org.springframework.http.HttpStatus;
@@ -32,5 +30,15 @@ public class CustomerController {
 
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
 
+    }
+
+    @PostMapping("/addproduct")
+    public ResponseEntity<ApiResponse<AddProductToCartResponse>>addProductToCart(AddProductToCart productToCart){
+
+       AddProductToCartResponse addProduct=customerService.addProductToCart(productToCart);
+
+       ApiResponse<AddProductToCartResponse>response=new ApiResponse<>(LocalDateTime.now(),"Added successfully",true,addProduct);
+
+       return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 }

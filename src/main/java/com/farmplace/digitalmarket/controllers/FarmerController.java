@@ -1,9 +1,6 @@
 package com.farmplace.digitalmarket.controllers;
 
-import com.farmplace.digitalmarket.DTO.ApiResponse;
-import com.farmplace.digitalmarket.DTO.CreateAccountDto;
-import com.farmplace.digitalmarket.DTO.FarmerRegister;
-import com.farmplace.digitalmarket.DTO.PostProductRequest;
+import com.farmplace.digitalmarket.DTO.*;
 import com.farmplace.digitalmarket.Model.Product;
 import com.farmplace.digitalmarket.service.serviceInterface.FarmerService;
 import org.springframework.http.HttpStatus;
@@ -35,11 +32,11 @@ public class FarmerController {
     }
 
     @PostMapping("/addproduct")
-    public ResponseEntity<ApiResponse<Product>>addProduct(PostProductRequest postProduct){
+    public ResponseEntity<ApiResponse<PostProductResponse>> addProduct(PostProductRequest postProduct){
 
-        Product product=farmerService.postProduct(postProduct);
+        PostProductResponse postResponse=farmerService.postProduct(postProduct);
 
-        ApiResponse<Product>response=new ApiResponse<>(LocalDateTime.now(),"Product added successfully",true,product);
+        ApiResponse<PostProductResponse>response=new ApiResponse<>(LocalDateTime.now(),"Product added successfully",true,postResponse);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
 

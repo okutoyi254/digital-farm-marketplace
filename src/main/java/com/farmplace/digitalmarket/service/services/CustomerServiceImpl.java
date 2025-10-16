@@ -1,6 +1,7 @@
 package com.farmplace.digitalmarket.service.services;
 
 import com.farmplace.digitalmarket.DTO.AddProductToCart;
+import com.farmplace.digitalmarket.DTO.AddProductToCartResponse;
 import com.farmplace.digitalmarket.DTO.CreateAccountDto;
 import com.farmplace.digitalmarket.DTO.CustomerRegister;
 import com.farmplace.digitalmarket.Model.Cart;
@@ -8,6 +9,7 @@ import com.farmplace.digitalmarket.Model.CartItem;
 import com.farmplace.digitalmarket.Model.Customer;
 import com.farmplace.digitalmarket.Model.Product;
 import com.farmplace.digitalmarket.exceptions.FailedToFetchCustomerCart;
+import com.farmplace.digitalmarket.exceptions.InsufficientQuantity;
 import com.farmplace.digitalmarket.exceptions.ProductDoesntExistException;
 import com.farmplace.digitalmarket.repository.CartItemRepository;
 import com.farmplace.digitalmarket.repository.CartRepository;
@@ -48,11 +50,16 @@ public class CustomerServiceImpl implements CustomerService {
 
     @Override
     @Transactional
-    public CartItem addProductToCart(AddProductToCart productToCart) {
+    public AddProductToCartResponse addProductToCart(AddProductToCart productToCart) {
 
         //Verify the product selected is currently present in the database
         Product product=productRepository.findById(productToCart.getProductId())
                 .orElseThrow(()->new ProductDoesntExistException("The selected product does not currently exist in the inventory"));
+
+        if(productToCart.getQuantity()> product.getCurrentStock()){
+
+           throw new InsufficientQuantity("The selected quantity is not available");
+        }
 
         //Get the customer's cart
          cart= cartRepository.findByCustomer_phoneNumber(LoggedInCustomer.getUsername())
@@ -65,11 +72,14 @@ public class CustomerServiceImpl implements CustomerService {
 
             cartItemRepository.save(cartItem);
 
+            product.setCurrentStock(product.getCurrentStock()- productToCart.getQuantity());
+            productRepository.save(product);
+
         cartRepository.save(cart);
 
+return AddProductToCartResponse.builder().productName(product.getProductName()).quantity(productToCart.getQuantity()).build();
 
 
-    return cartItem;
     }
 
     @Override
@@ -111,6 +121,7 @@ public class CustomerServiceImpl implements CustomerService {
             cartItem= new CartItem();
             cartItem.setUnitPrice(product.getUnitPrice());
             cartItem.setProduct(product);
+            cartItem.setCart(cart);
             cartItem.setDiscountAllowed(discount());
             cartItem.setTotalPrice(productToCart.getQuantity()* product.getUnitPrice());
             cartItem.setQuantity(productToCart.getQuantity());

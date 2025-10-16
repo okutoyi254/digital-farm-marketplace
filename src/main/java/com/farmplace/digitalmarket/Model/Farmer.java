@@ -2,9 +2,11 @@ package com.farmplace.digitalmarket.Model;
 
 import jakarta.persistence.*;
 import lombok.*;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.List;
 
 @AllArgsConstructor
 @NoArgsConstructor
@@ -41,6 +43,9 @@ public class Farmer {
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
-    @OneToMany(mappedBy = "farmer",cascade = CascadeType.ALL,orphanRemoval = true)
-    private ArrayList<Product>products;
+    @OneToMany(mappedBy = "farmer", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference
+    private List<Product> products = new ArrayList<>();
+
+
 }

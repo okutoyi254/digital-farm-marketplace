@@ -42,6 +42,11 @@ public class ModelMapperConfig {
               }).map(source,destination.getCustomerName());
             };
         });
+       /*
+        modelMapper.addMappings(new PropertyMap<Object, Object>() {
+        });
+
+        */
         return modelMapper;
     }
 }

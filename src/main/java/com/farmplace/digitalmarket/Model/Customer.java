@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.List;
 
 @AllArgsConstructor
 @NoArgsConstructor
@@ -46,7 +47,6 @@ public class Customer {
     @OneToOne( cascade = CascadeType.ALL,orphanRemoval = true,mappedBy = "customer")
     private Cart cart;
 
-    @OneToMany(mappedBy = "customer", cascade = CascadeType.MERGE)
-    private ArrayList<Order>orders;
-
+    @OneToMany(mappedBy = "customer",cascade = CascadeType.ALL,orphanRemoval = true)
+    private List<Order>orders=new ArrayList<>();
 }

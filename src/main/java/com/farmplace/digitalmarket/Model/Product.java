@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @AllArgsConstructor
@@ -51,6 +52,6 @@ public class Product {
     private List<OrderItem> orderItems;
 
     @OneToMany(mappedBy = "product",cascade = CascadeType.ALL,orphanRemoval = true)
-    private List<CartItem>cartItems;
+    private List<CartItem>cartItems=new ArrayList<>();
 
 }
