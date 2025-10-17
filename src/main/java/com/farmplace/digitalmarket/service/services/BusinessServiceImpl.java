@@ -1,5 +1,6 @@
 package com.farmplace.digitalmarket.service.services;
 
+import com.farmplace.digitalmarket.DTO.OrderResponse;
 import com.farmplace.digitalmarket.Model.*;
 import com.farmplace.digitalmarket.enums.DeliveryS;
 import com.farmplace.digitalmarket.exceptions.FailedToFetchCustomerCart;
@@ -37,10 +38,12 @@ public class BusinessServiceImpl implements businessService {
     private CartRepository cartRepository;
     private CartItemRepository cartItemRepository;
 
+    private static int totalItems;
+
 
 
     @Override
-    public Order placeOrder(String username, double paymentAmount) {
+    public OrderResponse placeOrder(String username, double paymentAmount) {
 
         Cart cart=cartRepository.findByCustomer_phoneNumber(username).
                 orElseThrow(()-> new FailedToFetchCustomerCart("Internal error,try again later"));
@@ -62,7 +65,8 @@ public class BusinessServiceImpl implements businessService {
         order.setOrderDate(LocalDateTime.now());
         order.setCustomer(customer);
         order.setDeliveryStatus(DeliveryS.PENDING);
-        order.setTotalItems(9);
+        order.setTotalItems(totalItems);
+        orderRepository.save(order);
 
         persistToOrderItems(cart,order);
 
@@ -71,7 +75,9 @@ public class BusinessServiceImpl implements businessService {
         cart.getCartItems().clear();
         cartRepository.save(cart);
 
-        return  orderRepository.save(order);
+
+
+        return OrderResponse.builder().amount(calculateTotalCost(cart)).numberOfItems(order.getTotalItems()).build();
     }
 
     @Override
@@ -107,6 +113,7 @@ public class BusinessServiceImpl implements businessService {
             orderItem.setDiscount(cartItem.getDiscountAllowed());
             orderItem.setOrder(order);
             orderItems.add(orderItem);
+            totalItems++;
         }
         order.setOrderItems(orderItems);
         orderItemRepository.saveAll(orderItems);
@@ -119,7 +126,6 @@ public class BusinessServiceImpl implements businessService {
         payments.setPaidAt(LocalDateTime.now());
         payments.setAmount(paymentAmount);
         payments.setTransactionReference(UUID.randomUUID().toString());
-        order.setPaymentLogs(payments);
         paymentLogs.save(payments);
     }
 

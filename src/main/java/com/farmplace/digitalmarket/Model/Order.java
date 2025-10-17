@@ -2,21 +2,19 @@ package com.farmplace.digitalmarket.Model;
 
 import com.farmplace.digitalmarket.enums.DeliveryS;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
+import lombok.*;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 
 @AllArgsConstructor
 @NoArgsConstructor
-@Data
+@Getter
+@Setter
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Entity
 @Table(name = "orders")
-@ToString(exclude = {"customer","orderItems","paymentLogs"})
+@ToString(exclude = {"customer", "orderItems"})
 public class Order {
 
     @Id
@@ -40,8 +38,6 @@ public class Order {
     @OneToMany(mappedBy = "order",cascade = CascadeType.ALL,orphanRemoval = true)
     private List<OrderItem>orderItems;
 
-    @OneToOne(cascade = CascadeType.ALL)
-    private PaymentLogs paymentLogs;
 
 
 

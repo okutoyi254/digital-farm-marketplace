@@ -11,6 +11,7 @@ import lombok.NoArgsConstructor;
 @Builder
 public class OrderResponse {
 
-    private String successNotification;
+    private int numberOfItems;
+    private double amount;
 
 }
