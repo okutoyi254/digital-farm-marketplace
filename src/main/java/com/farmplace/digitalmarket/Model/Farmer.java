@@ -47,5 +47,6 @@ public class Farmer {
     @JsonManagedReference
     private List<Product> products = new ArrayList<>();
 
-
+   @OneToOne(cascade = CascadeType.ALL,orphanRemoval = true)
+    private User user;
 }

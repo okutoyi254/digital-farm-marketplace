@@ -7,9 +7,12 @@ import com.farmplace.digitalmarket.DTO.PostProductResponse;
 import com.farmplace.digitalmarket.Model.Farmer;
 import com.farmplace.digitalmarket.Model.Product;
 import com.farmplace.digitalmarket.Model.ProductsCategory;
+import com.farmplace.digitalmarket.Model.User;
+import com.farmplace.digitalmarket.enums.Roles;
 import com.farmplace.digitalmarket.repository.FarmerRepository;
 import com.farmplace.digitalmarket.repository.ProductCategoryRepository;
 import com.farmplace.digitalmarket.repository.ProductRepository;
+import com.farmplace.digitalmarket.repository.UserRepository;
 import com.farmplace.digitalmarket.service.serviceInterface.FarmerService;
 import com.farmplace.digitalmarket.utils.LoggedInCustomer;
 import org.modelmapper.ModelMapper;
@@ -25,12 +28,14 @@ public class FarmerServiceImpl implements FarmerService {
     private final ModelMapper modelMapper;
     private final FarmerRepository farmerRepository;
     private final ProductCategoryRepository categoryRepository;
+    private final UserRepository userRepository;
 
-    public FarmerServiceImpl(ProductRepository productRepository, ModelMapper modelMapper, FarmerRepository farmerRepository, ProductCategoryRepository categoryRepository) {
+    public FarmerServiceImpl(ProductRepository productRepository, ModelMapper modelMapper, FarmerRepository farmerRepository, ProductCategoryRepository categoryRepository, UserRepository userRepository) {
         this.productRepository = productRepository;
         this.modelMapper = modelMapper;
         this.farmerRepository = farmerRepository;
         this.categoryRepository = categoryRepository;
+        this.userRepository = userRepository;
     }
 
     @Override
@@ -40,6 +45,12 @@ public class FarmerServiceImpl implements FarmerService {
         farmer.setRatings(0.0);
         farmer.setCreatedAt(LocalDateTime.now());
          farmerRepository.save(farmer);
+
+         User user=new User();
+         user.setUserId(Long.valueOf(farmer.getFarmerId()));
+         user.setRole(Roles.FARMER);
+         userRepository.save(user);
+
 
         return CreateAccountDto.builder()
                 .firstName(farmerRegister.getFirstName())

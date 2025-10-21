@@ -4,17 +4,12 @@ import com.farmplace.digitalmarket.DTO.AddProductToCart;
 import com.farmplace.digitalmarket.DTO.AddProductToCartResponse;
 import com.farmplace.digitalmarket.DTO.CreateAccountDto;
 import com.farmplace.digitalmarket.DTO.CustomerRegister;
-import com.farmplace.digitalmarket.Model.Cart;
-import com.farmplace.digitalmarket.Model.CartItem;
-import com.farmplace.digitalmarket.Model.Customer;
-import com.farmplace.digitalmarket.Model.Product;
+import com.farmplace.digitalmarket.Model.*;
+import com.farmplace.digitalmarket.enums.Roles;
 import com.farmplace.digitalmarket.exceptions.FailedToFetchCustomerCart;
 import com.farmplace.digitalmarket.exceptions.InsufficientQuantity;
 import com.farmplace.digitalmarket.exceptions.ProductDoesntExistException;
-import com.farmplace.digitalmarket.repository.CartItemRepository;
-import com.farmplace.digitalmarket.repository.CartRepository;
-import com.farmplace.digitalmarket.repository.CustomerRepository;
-import com.farmplace.digitalmarket.repository.ProductRepository;
+import com.farmplace.digitalmarket.repository.*;
 import com.farmplace.digitalmarket.service.serviceInterface.CustomerService;
 import com.farmplace.digitalmarket.utils.LoggedInCustomer;
 import org.modelmapper.ModelMapper;
@@ -33,14 +28,16 @@ public class CustomerServiceImpl implements CustomerService {
     private final CustomerRepository customerRepository;
     private final ModelMapper modelMapper;
     private Cart cart;
+    private final UserRepository userRepository;
 
 
-    public CustomerServiceImpl(ProductRepository productRepository, CartRepository cartRepository, CartItemRepository cartItemRepository, CustomerRepository customerRepository, ModelMapper modelMapper) {
+    public CustomerServiceImpl(ProductRepository productRepository, CartRepository cartRepository, CartItemRepository cartItemRepository, CustomerRepository customerRepository, ModelMapper modelMapper, UserRepository userRepository) {
         this.productRepository = productRepository;
         this.cartRepository = cartRepository;
         this.cartItemRepository = cartItemRepository;
         this.customerRepository = customerRepository;
         this.modelMapper = modelMapper;
+        this.userRepository = userRepository;
     }
 
     //To be implemented later
@@ -92,6 +89,11 @@ return AddProductToCartResponse.builder().productName(product.getProductName()).
         cart1.setCreatedAt(LocalDateTime.now());
         customerRepository.save(customer);
         cartRepository.save(cart1);
+
+        User user=new User();
+        user.setUserId(customer.getCustomerId());
+        user.setRole(Roles.CUSTOMER);
+        userRepository.save(user);
 
 
 

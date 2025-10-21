@@ -5,5 +5,5 @@ public enum DeliveryS {
     PENDING,
     PROCESSING,
     DELIVERED,
-    CANCELLED
+    CANCELLED;
 }

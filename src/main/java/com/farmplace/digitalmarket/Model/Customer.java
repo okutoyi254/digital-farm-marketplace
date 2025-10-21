@@ -50,5 +50,8 @@ public class Customer {
     @OneToMany(mappedBy = "customer",cascade = CascadeType.ALL,orphanRemoval = true)
     private List<Order>orders=new ArrayList<>();
 
+    @OneToOne(cascade = CascadeType.ALL,orphanRemoval = true)
+    private User user;
+
 
 }
