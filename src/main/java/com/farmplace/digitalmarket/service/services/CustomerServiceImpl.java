@@ -81,6 +81,11 @@ return AddProductToCartResponse.builder().productName(product.getProductName()).
 
     @Override
     public CreateAccountDto createAccount(CustomerRegister customerRegister) {
+
+        User user=new User();
+        user.setRole(Roles.CUSTOMER);
+        userRepository.save(user);
+
         Customer customer=modelMapper.map(customerRegister, Customer.class);
         customer.setCreatedAt(LocalDateTime.now());
 
@@ -90,10 +95,6 @@ return AddProductToCartResponse.builder().productName(product.getProductName()).
         customerRepository.save(customer);
         cartRepository.save(cart1);
 
-        User user=new User();
-        user.setUserId(customer.getCustomerId());
-        user.setRole(Roles.CUSTOMER);
-        userRepository.save(user);
 
 
 

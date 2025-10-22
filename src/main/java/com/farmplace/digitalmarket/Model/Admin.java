@@ -34,6 +34,7 @@ public class Admin {
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
-    @OneToOne(cascade = CascadeType.ALL,orphanRemoval = true)
+    @OneToOne
+    @JoinColumn(name = "user_id", referencedColumnName = "userid")
     private User user;
 }

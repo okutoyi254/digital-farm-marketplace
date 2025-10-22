@@ -42,14 +42,16 @@ public class FarmerServiceImpl implements FarmerService {
     public CreateAccountDto register(FarmerRegister farmerRegister) {
 
         Farmer farmer=modelMapper.map(farmerRegister, Farmer.class);
-        farmer.setRatings(0.0);
-        farmer.setCreatedAt(LocalDateTime.now());
-         farmerRepository.save(farmer);
 
          User user=new User();
-         user.setUserId(Long.valueOf(farmer.getFarmerId()));
          user.setRole(Roles.FARMER);
          userRepository.save(user);
+
+
+        farmer.setRatings(0.0);
+        farmer.setCreatedAt(LocalDateTime.now());
+        farmer.setUser(user);
+        farmerRepository.save(farmer);
 
 
         return CreateAccountDto.builder()

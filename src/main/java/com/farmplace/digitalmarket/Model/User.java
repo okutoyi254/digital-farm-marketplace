@@ -16,7 +16,19 @@ import lombok.NoArgsConstructor;
 public class User {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long userId;
+
+    @Enumerated(value = EnumType.STRING)
     private Roles role;
+
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
+    private Farmer farmer;
+
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
+    private Customer customer;
+
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
+    private Admin admin;
 
 }

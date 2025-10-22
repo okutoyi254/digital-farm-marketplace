@@ -113,13 +113,14 @@ public class BusinessServiceImpl implements businessService {
         return 0.0000;
     }
 
-    private void persistToOrderItems(Cart cart, Order order){
+    private void persistToOrderItems(Cart cart, Order order) {
 
-        StringBuilder notificationMessage=new StringBuilder();
-        List<OrderItem>orderItems=new ArrayList<>();
-        for (CartItem cartItem : cart.getCartItems())
-        {
-            OrderItem orderItem=new OrderItem();
+        StringBuilder notificationMessage = new StringBuilder();
+        List<OrderItem> orderItems = new ArrayList<>();
+
+        for (CartItem cartItem : cart.getCartItems()) {
+
+            OrderItem orderItem = new OrderItem();
             orderItem.setTotalCost(cartItem.getTotalPrice());
             orderItem.setProduct(cartItem.getProduct());
             orderItem.setUnitPrice(cartItem.getUnitPrice());
@@ -129,21 +130,24 @@ public class BusinessServiceImpl implements businessService {
             orderItem.setOrder(order);
             orderItems.add(orderItem);
 
-            String message=String.valueOf(notificationMessage.append("Customer ").append(LoggedInCustomer.getUsername())
-                    .append(" has placed an order for ").append(orderItem.getQuantity())
-                    .append(" of ").append(orderItem.getProduct().getProductName()));
+            String message = String.format(
+                    "Customer %s has placed an order for %d units of %s.",
+                    LoggedInCustomer.getUsername(),
+                    orderItem.getQuantity(),
+                    orderItem.getProduct().getProductName()
+            );
 
-            User user= userRepository.findById(Long.valueOf(orderItem.getProduct().getFarmer().getFarmerId())).
-                    orElseThrow(()->new RuntimeException("Internal server error,please contact admin"));
+            // ✅ Get farmer's linked user
+            Farmer farmer = orderItem.getProduct().getFarmer();
+            User user = farmer.getUser();
 
-            saveNotification(user,message);
-
-          //  totalItems++;
-
+            saveNotification(user, message);
         }
+
         order.setOrderItems(orderItems);
         orderItemRepository.saveAll(orderItems);
     }
+
 
     private void persistToPaymentsLogs(Order order,Cart cart,double paymentAmount){
         double totalPrice = calculateTotalCost(cart);
@@ -156,7 +160,7 @@ public class BusinessServiceImpl implements businessService {
     }
 
     @Async
-    private  void saveNotification(User user,String message) {
+    public void saveNotification(User user, String message) {
         try {
             Notifications notifications = Notifications.builder()
                     .user(user)
