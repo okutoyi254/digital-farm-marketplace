@@ -13,6 +13,7 @@ import com.farmplace.digitalmarket.repository.*;
 import com.farmplace.digitalmarket.service.serviceInterface.CustomerService;
 import com.farmplace.digitalmarket.utils.LoggedInCustomer;
 import org.modelmapper.ModelMapper;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -96,15 +97,32 @@ return AddProductToCartResponse.builder().productName(product.getProductName()).
         cartRepository.save(cart1);
 
 
-
-
-        CreateAccountDto createAccountDto= CreateAccountDto.builder()
+        return CreateAccountDto.builder()
                 .emailAddress(customerRegister.getEmailAddress())
                 .phoneNumber(customer.getPhoneNumber())
                 .firstName(customerRegister.getFirstName()).build();
-
-        return createAccountDto;
     }
+
+    @Override
+    public Page<Product> findProductByCategoryID(int categoryId) {
+        return null;
+    }
+
+    @Override
+    public Page<Product> findProductByProductCategoryName(String productName) {
+        return null;
+    }
+
+    @Override
+    public Page<Product> displayAllProducts() {
+        return null;
+    }
+
+    @Override
+    public Product findProductByproductName(String productName) {
+        return null;
+    }
+
 
     private CartItem getCartItem(AddProductToCart productToCart, Product product) {
 

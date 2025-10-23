@@ -4,9 +4,15 @@ import com.farmplace.digitalmarket.DTO.AddProductToCart;
 import com.farmplace.digitalmarket.DTO.AddProductToCartResponse;
 import com.farmplace.digitalmarket.DTO.CreateAccountDto;
 import com.farmplace.digitalmarket.DTO.CustomerRegister;
+import com.farmplace.digitalmarket.Model.Product;
+import org.springframework.data.domain.Page;
 
 public interface CustomerService {
 
     public AddProductToCartResponse addProductToCart(AddProductToCart productToCart);
     public CreateAccountDto createAccount(CustomerRegister customerRegister);
+    public Page<Product> findProductByCategoryID(int categoryId);
+    public Page<Product>findProductByProductCategoryName(String productName);
+    public Page<Product>displayAllProducts();
+    public Product findProductByproductName(String productName);
 }

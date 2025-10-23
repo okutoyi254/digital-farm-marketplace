@@ -8,6 +8,7 @@ import com.farmplace.digitalmarket.Model.Farmer;
 import com.farmplace.digitalmarket.Model.Product;
 import com.farmplace.digitalmarket.Model.ProductsCategory;
 import com.farmplace.digitalmarket.Model.User;
+import com.farmplace.digitalmarket.enums.Availability;
 import com.farmplace.digitalmarket.enums.Roles;
 import com.farmplace.digitalmarket.repository.FarmerRepository;
 import com.farmplace.digitalmarket.repository.ProductCategoryRepository;
@@ -73,6 +74,7 @@ public class FarmerServiceImpl implements FarmerService {
                 .unitPrice(postRequest.getUnitPrice())
                 .shelfLife(postRequest.getShelfLife())
                 .imageUrl("www")
+                .availability(Availability.AVAILABLE)
                 .productsCategory(category.orElse(null))
                 .currentStock(postRequest.getInitialQuantity())
                 .initialQuantity(postRequest.getInitialQuantity())

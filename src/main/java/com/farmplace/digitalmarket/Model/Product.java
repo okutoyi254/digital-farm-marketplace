@@ -1,5 +1,6 @@
 package com.farmplace.digitalmarket.Model;
 
+import com.farmplace.digitalmarket.enums.Availability;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -47,6 +48,10 @@ public class Product {
     @ManyToOne
     @JoinColumn(name = "farmer_id")
     private Farmer farmer;
+
+    @Column(name = "available")
+    @Enumerated(value = EnumType.STRING)
+    private Availability availability;
 
     @OneToMany(mappedBy = "product",cascade = CascadeType.ALL,orphanRemoval = true)
     private List<OrderItem> orderItems;
