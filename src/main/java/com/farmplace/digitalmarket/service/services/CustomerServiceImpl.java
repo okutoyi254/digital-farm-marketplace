@@ -103,26 +103,6 @@ return AddProductToCartResponse.builder().productName(product.getProductName()).
                 .firstName(customerRegister.getFirstName()).build();
     }
 
-    @Override
-    public Page<Product> findProductByCategoryID(int categoryId) {
-        return null;
-    }
-
-    @Override
-    public Page<Product> findProductByProductCategoryName(String productName) {
-        return null;
-    }
-
-    @Override
-    public Page<Product> displayAllProducts() {
-        return null;
-    }
-
-    @Override
-    public Product findProductByproductName(String productName) {
-        return null;
-    }
-
 
     private CartItem getCartItem(AddProductToCart productToCart, Product product) {
 

@@ -11,8 +11,5 @@ public interface CustomerService {
 
     public AddProductToCartResponse addProductToCart(AddProductToCart productToCart);
     public CreateAccountDto createAccount(CustomerRegister customerRegister);
-    public Page<Product> findProductByCategoryID(int categoryId);
-    public Page<Product>findProductByProductCategoryName(String productName);
-    public Page<Product>displayAllProducts();
-    public Product findProductByproductName(String productName);
+
 }

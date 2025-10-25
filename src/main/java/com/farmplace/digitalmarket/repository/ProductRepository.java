@@ -9,7 +9,6 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.util.Optional;
 
 @Repository
 public interface ProductRepository extends JpaRepository<Product,Long> {
@@ -27,6 +26,11 @@ public interface ProductRepository extends JpaRepository<Product,Long> {
     """)
     Page<ProductDTO> findProductsByCategoryId(Pageable pageable,@Param("categoryId") Long categoryId);
 
+    /*Create a function in your database and call the function to return the
+    JSON format of all the products in the products entity with their characteristics to be displayed
+    */
+    @Query(value = "SELECT get_all_products_json()", nativeQuery = true)
+    String getAllProductsJSON();
 
 
 }

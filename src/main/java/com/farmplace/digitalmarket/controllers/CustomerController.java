@@ -5,6 +5,8 @@ import com.farmplace.digitalmarket.Model.ProductsCategory;
 import com.farmplace.digitalmarket.repository.ProductCategoryRepository;
 import com.farmplace.digitalmarket.repository.ProductRepository;
 import com.farmplace.digitalmarket.service.serviceInterface.CustomerService;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -12,11 +14,13 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpCookie;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.Map;
+import java.util.Objects;
 
 
 @Slf4j
@@ -45,7 +49,7 @@ public class CustomerController {
 
     }
 
-    @PostMapping("/addproduct")
+    @PostMapping("/add-product")
     public ResponseEntity<ApiResponse<AddProductToCartResponse>>addProductToCart(AddProductToCart productToCart){
 
        AddProductToCartResponse addProduct=customerService.addProductToCart(productToCart);
@@ -54,40 +58,32 @@ public class CustomerController {
 
        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
-    @GetMapping
-    public ResponseEntity<?> findProductByCategoryName(
-            @RequestParam("categoryName") String categoryName,
-            @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "5") int size,
-            @RequestParam(defaultValue = "productName") String sortBy,
-            @RequestParam(defaultValue = "true") boolean ascending) {
 
-        ProductsCategory category = categoryRepository.findByCategoryName(categoryName);
-        if (category == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("message", "No category found matching '" + categoryName + "'"));
+    @GetMapping("/all-products")
+    public ResponseEntity<String> getAllProducts() throws JsonProcessingException {
+        // Check if there are any products
+        if (productRepository.findAll().isEmpty()) {
+            String noProductsJson = new ObjectMapper()
+                    .writeValueAsString(Map.of("message", "No available products"));
+            return ResponseEntity
+                    .status(HttpStatus.NOT_FOUND)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(noProductsJson);
         }
 
-        Sort sort = ascending ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
-        Pageable pageable = PageRequest.of(page, size, sort);
+        // get JSON string from repository
+        String rawJson = productRepository.getAllProductsJSON();
 
-        log.info("The category id is:"+category.getCategoryId());
-        Page<ProductDTO> products = productRepository.findProductsByCategoryId(pageable, category.getCategoryId());
+        //pretty-print
+        ObjectMapper mapper = new ObjectMapper();
+        Object parsedJson = mapper.readValue(rawJson, Object.class);
+        String prettyJson = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(parsedJson);
 
-        if (products.isEmpty()) {
-            return ResponseEntity.ok(Map.of(
-                    "category", category.getCategoryName(),
-                    "totalProducts", 0,
-                    "message", "No products found under category '" + categoryName + "'"
-            ));
-        }
-
-        return ResponseEntity.ok(Map.of(
-                "category", category.getCategoryName(),
-                "totalProducts", products.getTotalElements(),
-                "page", products.getNumber(),
-                "data", products.getContent()
-        ));
+        //return JSON
+        return ResponseEntity
+                .ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(prettyJson);
     }
 
     }
