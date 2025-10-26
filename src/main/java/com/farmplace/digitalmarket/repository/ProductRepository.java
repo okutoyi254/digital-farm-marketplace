@@ -32,5 +32,9 @@ public interface ProductRepository extends JpaRepository<Product,Long> {
     @Query(value = "SELECT get_all_products_json()", nativeQuery = true)
     String getAllProductsJSON();
 
+    //Create a function that returns JSON product characteristics fron the schema
+    @Query(value = "SELECT findProductByName(:prodName)",nativeQuery = true)
+    String getProductByName(@Param("prodName") String productName);
+
 
 }

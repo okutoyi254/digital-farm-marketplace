@@ -1,24 +1,20 @@
 package com.farmplace.digitalmarket.controllers;
 
 import com.farmplace.digitalmarket.DTO.*;
-import com.farmplace.digitalmarket.Model.ProductsCategory;
 import com.farmplace.digitalmarket.repository.ProductCategoryRepository;
 import com.farmplace.digitalmarket.repository.ProductRepository;
 import com.farmplace.digitalmarket.service.serviceInterface.CustomerService;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.http.HttpCookie;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -79,12 +75,36 @@ public class CustomerController {
         Object parsedJson = mapper.readValue(rawJson, Object.class);
         String prettyJson = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(parsedJson);
 
-        //return JSON
         return ResponseEntity
                 .ok()
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(prettyJson);
     }
+
+    @GetMapping("/getProductByName")
+    public ResponseEntity<?> findProductByName(@RequestParam String productName) {
+        String rawJson = productRepository.getProductByName(productName);
+
+        // Handle empty or null result from DB
+        if (rawJson == null || rawJson.isBlank() || rawJson.equalsIgnoreCase("null")) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("No available matches");
+        }
+
+        ObjectMapper mapper = new ObjectMapper();
+        try {
+            ProductResponse result = mapper.readValue(rawJson, ProductResponse.class);
+
+            return ResponseEntity.ok()
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(result);
+
+        } catch (JsonProcessingException ex) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error processing product data");
+        }
+    }
+
 
     }
 
