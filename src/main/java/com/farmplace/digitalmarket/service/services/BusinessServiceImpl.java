@@ -6,9 +6,11 @@ import com.farmplace.digitalmarket.controllers.NotificationSocketController;
 import com.farmplace.digitalmarket.enums.DeliveryS;
 import com.farmplace.digitalmarket.enums.NotificationStatus;
 import com.farmplace.digitalmarket.enums.Roles;
+import com.farmplace.digitalmarket.events.OrderPlacedEvent;
 import com.farmplace.digitalmarket.exceptions.FailedToFetchCustomerCart;
 import com.farmplace.digitalmarket.exceptions.InsufficientBalanceException;
 import com.farmplace.digitalmarket.exceptions.NoItemsInTheCartException;
+import com.farmplace.digitalmarket.publisher.OrderPlacementEventPublisher;
 import com.farmplace.digitalmarket.repository.*;
 import com.farmplace.digitalmarket.service.serviceInterface.businessService;
 import com.farmplace.digitalmarket.utils.LoggedInCustomer;
@@ -29,18 +31,20 @@ public class BusinessServiceImpl implements businessService {
     private final CustomerRepository customerRepository;
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
+    private final OrderPlacementEventPublisher orderPlacementEventPublisher;
     private final UserRepository userRepository;
     private final NotificationsRepository notificationsRepository;
     private final NotificationSocketController socketController;
 
     public BusinessServiceImpl(CustomerRepository customerRepository,
-                               OrderRepository orderRepository, OrderItemRepository orderItemRepository, UserRepository userRepository, FarmerRepository farmerRepository, NotificationsRepository notificationsRepository, NotificationSocketController socketController,
+                               OrderRepository orderRepository, OrderItemRepository orderItemRepository, UserRepository userRepository, FarmerRepository farmerRepository, OrderPlacementEventPublisher orderPlacementEventPublisher, NotificationsRepository notificationsRepository, NotificationSocketController socketController,
                                PaymentLogsRepository paymentLogs, CartRepository cartRepository,
                                CartItemRepository cartItemRepository) {
         this.customerRepository = customerRepository;
         this.orderRepository = orderRepository;
         this.orderItemRepository = orderItemRepository;
         this.userRepository = userRepository;
+        this.orderPlacementEventPublisher = orderPlacementEventPublisher;
         this.notificationsRepository = notificationsRepository;
         this.socketController = socketController;
         this.paymentLogs = paymentLogs;
@@ -53,42 +57,41 @@ public class BusinessServiceImpl implements businessService {
     private CartItemRepository cartItemRepository;
 
 
-@Transactional
+
+    @Transactional
     @Override
     public OrderResponse placeOrder(String username, double paymentAmount) {
 
-         int totalItems = 0;
-        Cart cart=cartRepository.findByCustomer_phoneNumber(username).
-                orElseThrow(()-> new FailedToFetchCustomerCart("Internal error,try again later"));
+        int totalItems = 0;
+        Cart cart = cartRepository.findByCustomer_phoneNumber(username).
+                orElseThrow(() -> new FailedToFetchCustomerCart("Internal error,try again later"));
 
-        double totalCost=calculateTotalCost(cart);
-        if(paymentAmount < totalCost){
+        double totalCost = calculateTotalCost(cart);
+        if (paymentAmount < totalCost) {
             throw new InsufficientBalanceException("Insufficient balance to place the order,please try again later");
         }
 
 
-
-        if(cart.getCartItems()==null || cart.getCartItems().isEmpty()){
+        if (cart.getCartItems() == null || cart.getCartItems().isEmpty()) {
             throw new NoItemsInTheCartException("No items available,add products to place an order");
         }
 
         Customer customer = customerRepository.findByPhoneNumber(username)
-                .orElseThrow(()->new RuntimeException("Internal error,please contact admin"));
+                .orElseThrow(() -> new RuntimeException("Internal error,please contact admin"));
 
-        Order order=new Order();
+        Order order = new Order();
         order.setOrderDate(LocalDateTime.now());
         order.setCustomer(customer);
         order.setDeliveryStatus(DeliveryS.PENDING);
         order.setTotalItems(totalItems);
         orderRepository.save(order);
 
-        persistToOrderItems(cart,order);
+        persistToOrderItems(cart, order);
 
-        persistToPaymentsLogs(order,cart,paymentAmount);
+        persistToPaymentsLogs(order, cart, paymentAmount);
 
         cart.getCartItems().clear();
         cartRepository.save(cart);
-
 
 
         return OrderResponse.builder().amount(calculateTotalCost(cart)).numberOfItems(order.getTotalItems()).build();
@@ -97,13 +100,13 @@ public class BusinessServiceImpl implements businessService {
     @Override
     public Double calculateTotalCost(Cart cart) {
 
-        double totalCost=0.0;
-        for(CartItem cartItem :cart.getCartItems()){
+        double totalCost = 0.0;
+        for (CartItem cartItem : cart.getCartItems()) {
 
-            double totalPrice=cartItem.getQuantity()* cartItem.getUnitPrice();
-            double deliveries=deliveryCharges();
-            double priceOff= cartItem.getDiscountAllowed();
-            totalCost+=totalPrice+deliveries-priceOff;
+            double totalPrice = cartItem.getQuantity() * cartItem.getUnitPrice();
+            double deliveries = deliveryCharges();
+            double priceOff = cartItem.getDiscountAllowed();
+            totalCost += totalPrice + deliveries - priceOff;
 
         }
         return totalCost;
@@ -130,18 +133,14 @@ public class BusinessServiceImpl implements businessService {
             orderItem.setOrder(order);
             orderItems.add(orderItem);
 
-            String message = String.format(
-                    "Customer %s has placed an order for %d units of %s.",
-                    LoggedInCustomer.getUsername(),
-                    orderItem.getQuantity(),
-                    orderItem.getProduct().getProductName()
-            );
 
             // ✅ Get farmer's linked user
             Farmer farmer = orderItem.getProduct().getFarmer();
             User user = farmer.getUser();
+            orderPlacementEventPublisher.publishOrderPlacedEvent
+                    (user.getUserId(),orderItem.getQuantity(),orderItem.getProduct().getProductName());
 
-            saveNotification(user, message);
+
         }
 
         order.setOrderItems(orderItems);
@@ -149,7 +148,7 @@ public class BusinessServiceImpl implements businessService {
     }
 
 
-    private void persistToPaymentsLogs(Order order,Cart cart,double paymentAmount){
+    private void persistToPaymentsLogs(Order order, Cart cart, double paymentAmount) {
         double totalPrice = calculateTotalCost(cart);
         PaymentLogs payments = new PaymentLogs();
         payments.setOrder(order);
@@ -157,23 +156,5 @@ public class BusinessServiceImpl implements businessService {
         payments.setAmount(paymentAmount);
         payments.setTransactionReference(UUID.randomUUID().toString());
         paymentLogs.save(payments);
-    }
-
-    @Async
-    public void saveNotification(User user, String message) {
-        try {
-            Notifications notifications = Notifications.builder()
-                    .user(user)
-                    .notificationMessage(message)
-                    .role(Roles.FARMER)
-                    .notificationStatus(NotificationStatus.UNREAD)
-                    .timeStamp(LocalDateTime.now()).build();
-            Notifications saved = notificationsRepository.save(notifications);
-
-            socketController.sendNotificationToFarmer(user.getUserId(), saved);
-        } catch (Exception ex){
-            log.error("Failed to send notification: {}", ex.getMessage());
-        }
-
     }
 }

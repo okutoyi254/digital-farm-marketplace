@@ -23,9 +23,7 @@ public class Notifications {
     private Roles role;
     private String notificationMessage;
     private NotificationStatus notificationStatus;
-    @ManyToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "user_id")
-    private User user;
+    private long userId;
 
 
 }

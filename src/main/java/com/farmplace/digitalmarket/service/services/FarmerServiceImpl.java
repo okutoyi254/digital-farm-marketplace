@@ -65,7 +65,7 @@ public class FarmerServiceImpl implements FarmerService {
     public PostProductResponse postProduct(PostProductRequest postRequest) {
 
         String farmer= LoggedInCustomer.getUsername();
-        Optional<Farmer> farmer1=farmerRepository.findByPhoneNumber("0796791558");
+        Optional<Farmer> farmer1=farmerRepository.findByPhoneNumber("0707636849");
         Optional<ProductsCategory> category=categoryRepository.findById(postRequest.getCategoryId());
         //Product product= modelMapper.map(postRequest, Product.class);
         Product product=Product.builder()
