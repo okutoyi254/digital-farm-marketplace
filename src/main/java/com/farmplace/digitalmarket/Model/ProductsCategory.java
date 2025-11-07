@@ -25,6 +25,8 @@ public class ProductsCategory {
     @Column(name = "category_name")
     private String categoryName;
 
+
+
     @OneToMany(mappedBy = "productsCategory",orphanRemoval = true,cascade = CascadeType.ALL)
     private List<Product> products=new ArrayList<>();
 }

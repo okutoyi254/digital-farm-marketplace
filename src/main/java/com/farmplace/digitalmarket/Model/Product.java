@@ -38,6 +38,12 @@ public class Product {
     @Column(name = "current_stock")
     private int currentStock;
 
+    @Column(name = "discount")
+    private double discount;
+
+    @Column(name="allow_discount")
+    private boolean discountAllowed;
+
     @Column(name = "image_url")
     private String imageUrl;
 

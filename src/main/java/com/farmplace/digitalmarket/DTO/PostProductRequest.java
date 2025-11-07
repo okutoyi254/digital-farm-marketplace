@@ -12,6 +12,7 @@ import lombok.NoArgsConstructor;
 public class PostProductRequest {
 
 
+    private double discount;
     private Long categoryId;
     private String productName;
     private int initialQuantity;

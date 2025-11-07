@@ -19,8 +19,14 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long userId;
 
+    @Column(name = "username",unique = true)
+    private String username;
+
     @Enumerated(value = EnumType.STRING)
     private Roles role;
+
+    @Column(name = "password")
+    private String password;
 
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
     private Farmer farmer;

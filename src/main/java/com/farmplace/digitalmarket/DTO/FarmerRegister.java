@@ -11,6 +11,7 @@ import lombok.NoArgsConstructor;
 @Builder
 public class FarmerRegister {
 
+    public String getPasswordHash;
     private String firstName;
     private String lastName;
     private String emailAddress;

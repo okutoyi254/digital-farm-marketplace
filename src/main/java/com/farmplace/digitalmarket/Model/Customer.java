@@ -38,9 +38,6 @@ public class Customer {
     @Column(name = "loyalty_points")
     private double loyaltyPoints;
 
-    @Column(name = "password_hash")
-    private String passwordHash;
-
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 

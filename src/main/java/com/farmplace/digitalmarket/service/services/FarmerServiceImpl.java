@@ -16,7 +16,9 @@ import com.farmplace.digitalmarket.repository.ProductRepository;
 import com.farmplace.digitalmarket.repository.UserRepository;
 import com.farmplace.digitalmarket.service.serviceInterface.FarmerService;
 import com.farmplace.digitalmarket.utils.LoggedInCustomer;
+import io.jsonwebtoken.security.Password;
 import org.modelmapper.ModelMapper;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -30,13 +32,15 @@ public class FarmerServiceImpl implements FarmerService {
     private final FarmerRepository farmerRepository;
     private final ProductCategoryRepository categoryRepository;
     private final UserRepository userRepository;
+    private final PasswordEncoder encoder;
 
-    public FarmerServiceImpl(ProductRepository productRepository, ModelMapper modelMapper, FarmerRepository farmerRepository, ProductCategoryRepository categoryRepository, UserRepository userRepository) {
+    public FarmerServiceImpl(ProductRepository productRepository, ModelMapper modelMapper, FarmerRepository farmerRepository, ProductCategoryRepository categoryRepository, UserRepository userRepository, PasswordEncoder encoder) {
         this.productRepository = productRepository;
         this.modelMapper = modelMapper;
         this.farmerRepository = farmerRepository;
         this.categoryRepository = categoryRepository;
         this.userRepository = userRepository;
+        this.encoder = encoder;
     }
 
     @Override
@@ -46,6 +50,8 @@ public class FarmerServiceImpl implements FarmerService {
 
          User user=new User();
          user.setRole(Roles.FARMER);
+         user.setUsername(farmerRegister.getPhoneNumber());
+         user.setPassword(encoder.encode(farmerRegister.getPasswordHash));
          userRepository.save(user);
 
 
@@ -65,8 +71,13 @@ public class FarmerServiceImpl implements FarmerService {
     public PostProductResponse postProduct(PostProductRequest postRequest) {
 
         String farmer= LoggedInCustomer.getUsername();
-        Optional<Farmer> farmer1=farmerRepository.findByPhoneNumber("0707636849");
+        Optional<Farmer> farmer1=farmerRepository.findByPhoneNumber(farmer);
         Optional<ProductsCategory> category=categoryRepository.findById(postRequest.getCategoryId());
+
+        boolean discountAllowed=false;
+        if(postRequest.getDiscount()>0.0){
+            discountAllowed=true;
+        }
         //Product product= modelMapper.map(postRequest, Product.class);
         Product product=Product.builder()
                 .productName(postRequest.getProductName())
@@ -74,6 +85,8 @@ public class FarmerServiceImpl implements FarmerService {
                 .unitPrice(postRequest.getUnitPrice())
                 .shelfLife(postRequest.getShelfLife())
                 .imageUrl("www")
+                .discount(postRequest.getDiscount())
+                .discountAllowed(discountAllowed)
                 .availability(Availability.AVAILABLE)
                 .productsCategory(category.orElse(null))
                 .currentStock(postRequest.getInitialQuantity())

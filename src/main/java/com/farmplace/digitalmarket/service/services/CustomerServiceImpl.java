@@ -14,6 +14,7 @@ import com.farmplace.digitalmarket.service.serviceInterface.CustomerService;
 import com.farmplace.digitalmarket.utils.LoggedInCustomer;
 import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Page;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,15 +31,17 @@ public class CustomerServiceImpl implements CustomerService {
     private final ModelMapper modelMapper;
     private Cart cart;
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
 
-    public CustomerServiceImpl(ProductRepository productRepository, CartRepository cartRepository, CartItemRepository cartItemRepository, CustomerRepository customerRepository, ModelMapper modelMapper, UserRepository userRepository) {
+    public CustomerServiceImpl(ProductRepository productRepository, CartRepository cartRepository, CartItemRepository cartItemRepository, CustomerRepository customerRepository, ModelMapper modelMapper, UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.productRepository = productRepository;
         this.cartRepository = cartRepository;
         this.cartItemRepository = cartItemRepository;
         this.customerRepository = customerRepository;
         this.modelMapper = modelMapper;
         this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     //To be implemented later
@@ -85,6 +88,8 @@ return AddProductToCartResponse.builder().productName(product.getProductName()).
 
         User user=new User();
         user.setRole(Roles.CUSTOMER);
+        user.setUsername(customerRegister.getPhoneNumber());
+        user.setPassword(passwordEncoder.encode(customerRegister.getPasswordHash()));
         userRepository.save(user);
 
         Customer customer=modelMapper.map(customerRegister, Customer.class);
