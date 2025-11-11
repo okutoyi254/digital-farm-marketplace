@@ -119,7 +119,7 @@ return AddProductToCartResponse.builder().productName(product.getProductName()).
 
             cartItem= existingItem.get();
             cartItem.setQuantity(productToCart.getQuantity());
-            cartItem.setTotalPrice(productToCart.getQuantity()* product.getUnitPrice());
+            cartItem.setTotalPrice(productToCart.getQuantity()* product.getUnitPrice()-discount());
             cartItem.setDiscountAllowed(discount());
         }
         else {
@@ -129,7 +129,7 @@ return AddProductToCartResponse.builder().productName(product.getProductName()).
             cartItem.setProduct(product);
             cartItem.setCart(cart);
             cartItem.setDiscountAllowed(discount());
-            cartItem.setTotalPrice(productToCart.getQuantity()* product.getUnitPrice());
+            cartItem.setTotalPrice(productToCart.getQuantity()* product.getUnitPrice()-discount());
             cartItem.setQuantity(productToCart.getQuantity());
             cart.getCartItems().add(cartItem);
 

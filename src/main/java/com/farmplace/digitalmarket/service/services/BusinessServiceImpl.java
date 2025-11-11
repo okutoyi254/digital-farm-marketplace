@@ -1,160 +1,106 @@
 package com.farmplace.digitalmarket.service.services;
 
+import com.farmplace.digitalmarket.DTO.CartItemDTO;
+import com.farmplace.digitalmarket.DTO.CartMessageDTO;
 import com.farmplace.digitalmarket.DTO.OrderResponse;
 import com.farmplace.digitalmarket.Model.*;
 import com.farmplace.digitalmarket.controllers.NotificationSocketController;
-import com.farmplace.digitalmarket.enums.DeliveryS;
-import com.farmplace.digitalmarket.enums.NotificationStatus;
-import com.farmplace.digitalmarket.enums.Roles;
-import com.farmplace.digitalmarket.events.OrderPlacedEvent;
 import com.farmplace.digitalmarket.exceptions.FailedToFetchCustomerCart;
 import com.farmplace.digitalmarket.exceptions.InsufficientBalanceException;
 import com.farmplace.digitalmarket.exceptions.NoItemsInTheCartException;
 import com.farmplace.digitalmarket.publisher.OrderPlacementEventPublisher;
 import com.farmplace.digitalmarket.repository.*;
 import com.farmplace.digitalmarket.service.serviceInterface.businessService;
-import com.farmplace.digitalmarket.utils.LoggedInCustomer;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.scheduling.annotation.Async;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
+
+
 
 @Service
 @Slf4j
 public class BusinessServiceImpl implements businessService {
 
     private final CustomerRepository customerRepository;
-    private final OrderRepository orderRepository;
-    private final OrderItemRepository orderItemRepository;
-    private final OrderPlacementEventPublisher orderPlacementEventPublisher;
-    private final UserRepository userRepository;
-    private final NotificationsRepository notificationsRepository;
-    private final NotificationSocketController socketController;
+    private final CartRepository cartRepository;
+    private final RabbitTemplate rabbitTemplate;
+
+
+    @Value("${rabbitmq.exchange}")
+    private String exchange;
+
+    @Value("${rabbitmq.routingkey}")
+    private String routingKey;
 
     public BusinessServiceImpl(CustomerRepository customerRepository,
-                               OrderRepository orderRepository, OrderItemRepository orderItemRepository, UserRepository userRepository, FarmerRepository farmerRepository, OrderPlacementEventPublisher orderPlacementEventPublisher, NotificationsRepository notificationsRepository, NotificationSocketController socketController,
-                               PaymentLogsRepository paymentLogs, CartRepository cartRepository,
-                               CartItemRepository cartItemRepository) {
+                               CartRepository cartRepository, RabbitTemplate rabbitTemplate) {
         this.customerRepository = customerRepository;
-        this.orderRepository = orderRepository;
-        this.orderItemRepository = orderItemRepository;
-        this.userRepository = userRepository;
-        this.orderPlacementEventPublisher = orderPlacementEventPublisher;
-        this.notificationsRepository = notificationsRepository;
-        this.socketController = socketController;
-        this.paymentLogs = paymentLogs;
         this.cartRepository = cartRepository;
-        this.cartItemRepository = cartItemRepository;
+        this.rabbitTemplate = rabbitTemplate;
     }
-
-    private PaymentLogsRepository paymentLogs;
-    private CartRepository cartRepository;
-    private CartItemRepository cartItemRepository;
-
-
 
     @Transactional
     @Override
     public OrderResponse placeOrder(String username, double paymentAmount) {
 
-        int totalItems = 0;
+        //Fetch customers cart
         Cart cart = cartRepository.findByCustomer_phoneNumber(username).
                 orElseThrow(() -> new FailedToFetchCustomerCart("Internal error,try again later"));
 
+        //calculate total cost
         double totalCost = calculateTotalCost(cart);
         if (paymentAmount < totalCost) {
             throw new InsufficientBalanceException("Insufficient balance to place the order,please try again later");
         }
 
-
+          //validate items
         if (cart.getCartItems() == null || cart.getCartItems().isEmpty()) {
             throw new NoItemsInTheCartException("No items available,add products to place an order");
         }
 
+        //verify customer
         Customer customer = customerRepository.findByPhoneNumber(username)
                 .orElseThrow(() -> new RuntimeException("Internal error,please contact admin"));
 
-        Order order = new Order();
-        order.setOrderDate(LocalDateTime.now());
-        order.setCustomer(customer);
-        order.setDeliveryStatus(DeliveryS.PENDING);
-        order.setTotalItems(totalItems);
-        orderRepository.save(order);
+        cart.setCustomer(customer);
 
-        persistToOrderItems(cart, order);
+        List<CartItemDTO> itemDTOS=cart.getCartItems().stream()
+                        .map(ci->new CartItemDTO(
+                                ci.getProduct().getProductId(),
+                                ci.getQuantity(),
+                                ci.getTotalPrice(),
+                                ci.getDeliveryCharges(),
+                                ci.getDiscountAllowed(),
+                                ci.getUnitPrice()
+                        )).toList();
 
-        persistToPaymentsLogs(order, cart, paymentAmount);
+        CartMessageDTO dto=CartMessageDTO.builder()
+                .cartId(cart.getCartId())
+                .items(itemDTOS).build();
 
-        cart.getCartItems().clear();
-        cartRepository.save(cart);
+        log.info("Sending cart to queue for async processing...");
+        rabbitTemplate.convertAndSend(exchange,routingKey,dto);
 
 
-        return OrderResponse.builder().amount(calculateTotalCost(cart)).numberOfItems(order.getTotalItems()).build();
+        return OrderResponse.builder().amount(calculateTotalCost(cart)).numberOfItems(cart.getCartItems().size()).build();
     }
 
     @Override
     public Double calculateTotalCost(Cart cart) {
 
-        double totalCost = 0.0;
-        for (CartItem cartItem : cart.getCartItems()) {
+        return cart.getCartItems().stream().mapToDouble(
+                ci->ci.getTotalPrice()+ci.getDeliveryCharges()).sum();
 
-            double totalPrice = cartItem.getQuantity() * cartItem.getUnitPrice();
-            double deliveries = deliveryCharges();
-            double priceOff = cartItem.getDiscountAllowed();
-            totalCost += totalPrice + deliveries - priceOff;
-
-        }
-        return totalCost;
     }
 
     private double deliveryCharges() {
         return 0.0000;
     }
 
-    private void persistToOrderItems(Cart cart, Order order) {
-
-        StringBuilder notificationMessage = new StringBuilder();
-        List<OrderItem> orderItems = new ArrayList<>();
-
-        for (CartItem cartItem : cart.getCartItems()) {
-
-            OrderItem orderItem = new OrderItem();
-            orderItem.setTotalCost(cartItem.getTotalPrice());
-            orderItem.setProduct(cartItem.getProduct());
-            orderItem.setUnitPrice(cartItem.getUnitPrice());
-            orderItem.setQuantity(cartItem.getQuantity());
-            orderItem.setDeliveryCharges(cartItem.getDeliveryCharges());
-            orderItem.setDiscount(cartItem.getDiscountAllowed());
-            orderItem.setOrder(order);
-            orderItems.add(orderItem);
 
 
-            // ✅ Get farmer's linked user
-            Farmer farmer = orderItem.getProduct().getFarmer();
-            User user = farmer.getUser();
-            orderPlacementEventPublisher.publishOrderPlacedEvent
-                    (user.getUserId(),orderItem.getQuantity(),orderItem.getProduct().getProductName());
-
-
-        }
-
-        order.setOrderItems(orderItems);
-        orderItemRepository.saveAll(orderItems);
-    }
-
-
-    private void persistToPaymentsLogs(Order order, Cart cart, double paymentAmount) {
-        double totalPrice = calculateTotalCost(cart);
-        PaymentLogs payments = new PaymentLogs();
-        payments.setOrder(order);
-        payments.setPaidAt(LocalDateTime.now());
-        payments.setAmount(paymentAmount);
-        payments.setTransactionReference(UUID.randomUUID().toString());
-        paymentLogs.save(payments);
-    }
 }

@@ -51,7 +51,7 @@ public class FarmerServiceImpl implements FarmerService {
          User user=new User();
          user.setRole(Roles.FARMER);
          user.setUsername(farmerRegister.getPhoneNumber());
-         user.setPassword(encoder.encode(farmerRegister.getPasswordHash));
+         user.setPassword(encoder.encode(farmerRegister.passwordHash));
          userRepository.save(user);
 
 

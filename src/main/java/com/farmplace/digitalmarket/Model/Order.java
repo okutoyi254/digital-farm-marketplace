@@ -4,6 +4,7 @@ import com.farmplace.digitalmarket.enums.DeliveryS;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -15,7 +16,7 @@ import java.util.List;
 @Entity
 @Table(name = "orders")
 @ToString(exclude = {"customer", "orderItems"})
-public class Order {
+public class Order implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -30,6 +31,9 @@ public class Order {
 
     @Column(name = "total_items")
     private int totalItems;
+
+    @Column(name = "total_price")
+    private double totalPrice;
 
     @ManyToOne
     @JoinColumn(name = "customer_id")

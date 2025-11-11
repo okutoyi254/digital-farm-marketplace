@@ -8,6 +8,8 @@ public class LoggedInCustomer {
     @Autowired
     static UserPrincipal principal;
     public static String getUsername(){
-        return principal.getUsername();
+
+        //return principal.getUsername();
+        return "07123456";
     }
 }

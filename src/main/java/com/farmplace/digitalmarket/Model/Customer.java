@@ -1,5 +1,6 @@
 package com.farmplace.digitalmarket.Model;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -42,6 +43,7 @@ public class Customer {
     private LocalDateTime createdAt;
 
     @OneToOne( cascade = CascadeType.ALL,orphanRemoval = true,mappedBy = "customer")
+    @JsonBackReference
     private Cart cart;
 
     @OneToMany(mappedBy = "customer",cascade = CascadeType.ALL,orphanRemoval = true)
