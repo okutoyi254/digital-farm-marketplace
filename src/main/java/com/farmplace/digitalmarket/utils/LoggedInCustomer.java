@@ -9,7 +9,6 @@ public class LoggedInCustomer {
     static UserPrincipal principal;
     public static String getUsername(){
 
-        //return principal.getUsername();
-        return "07123456";
+        return principal.getUsername();
     }
 }

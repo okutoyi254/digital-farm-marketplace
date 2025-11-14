@@ -119,7 +119,7 @@ return AddProductToCartResponse.builder().productName(product.getProductName()).
 
             cartItem= existingItem.get();
             cartItem.setQuantity(productToCart.getQuantity());
-            cartItem.setTotalPrice(productToCart.getQuantity()* product.getUnitPrice()-discount());
+            cartItem.setTotalPrice(productToCart.getQuantity()*( product.getUnitPrice()-discount()));
             cartItem.setDiscountAllowed(discount());
         }
         else {

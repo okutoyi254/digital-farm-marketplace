@@ -24,7 +24,6 @@ public class JwtService {
 
     public JwtService() {
         try {
-            // Dynamically generate a secure secret key for HS256
             KeyGenerator keyGen = KeyGenerator.getInstance("HmacSHA256");
             SecretKey sk = keyGen.generateKey();
             secretKey = Base64.getEncoder().encodeToString(sk.getEncoded());
@@ -40,8 +39,7 @@ public class JwtService {
                 .claims(claims)
                 .subject(username)
                 .issuedAt(new Date(System.currentTimeMillis()))
-                // ✅ 10 hours in milliseconds (not 60 * 60 * 10 = 600 seconds)
-                .expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 10))
+                .expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60)) // 1 hour
                 .signWith(getKey())
                 .compact();
     }
@@ -52,18 +50,17 @@ public class JwtService {
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
-    // 🔹 Validate token
-    public boolean validateToken(String token, UserDetails userDetails) {
-        final String username = extractUsername(token);
-        return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
-    }
-
     // 🔹 Extract username from token
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
     }
 
-    // 🔹 Generic method to extract any claim
+    // 🔹 Extract expiration date
+    private Date extractExpiration(String token) {
+        return extractClaim(token, Claims::getExpiration);
+    }
+
+    // 🔹 Extract any claim
     private <T> T extractClaim(String token, Function<Claims, T> claimResolver) {
         final Claims claims = extractAllClaims(token);
         return claimResolver.apply(claims);
@@ -78,17 +75,27 @@ public class JwtService {
                 .getPayload();
     }
 
-    // 🔹 Check if token is expired
+    // 🔹 Check if token expired
     private boolean isTokenExpired(String token) {
         return extractExpiration(token).before(new Date());
     }
 
-    // 🔹 Extract expiration date
-    private Date extractExpiration(String token) {
-        return extractClaim(token, Claims::getExpiration);
+    // 🔹 Validate token with UserDetails
+    public boolean validateToken(String token, UserDetails userDetails) {
+        final String username = extractUsername(token);
+        return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
     }
 
-    // 🔹 Optional: Strip "Bearer " prefix from header value
+    // 🔹 Overloaded: Validate token only (for refresh)
+    public boolean validateToken(String token) {
+        try {
+            return !isTokenExpired(token);
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    // 🔹 Strip Bearer prefix if present
     public String extractToken(String bearerToken) {
         if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
             return bearerToken.substring(7);
